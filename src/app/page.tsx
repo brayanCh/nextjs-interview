@@ -1,15 +1,19 @@
 'use client'
 import { useCallback, useState } from 'react';
 
+interface pointType {
+  lng: number
+  lat: number
+}
 
 // this component contains all the ui and logic for tha application, where
 // we got aa simple form and a list of coordinates that can be sent in a request
 export default function Home() {
-  const [points, setPoints] = useState([]);
+  const [points, setPoints] = useState<pointType[]>([]);
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
   // this should be using an env variable and not be hardcoded
-  const apiUrl = 'http://localhost:6000/geo/process';
+  const apiUrl = 'http://localhost:25000/geo/process';
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,7 +41,7 @@ export default function Home() {
     setLat('');
     setLng('');
     setError('');
-  }, [lat, lng, setLat, setLng, setPoints, setError]);
+  }, [lat, lng, setLat, setLng, setPoints, setError, points]);
 
   const removePoint = (index: number) => {
     setPoints(points.filter((_, i) => i !== index));
@@ -69,6 +73,7 @@ export default function Home() {
       redirect: "follow"
     };
 
+    // @ts-ignore
     fetch(apiUrl, requestOptions)
       .then((response) => response.json())
       .then((result) => {
