@@ -1,11 +1,15 @@
 'use client'
 import { useCallback, useState } from 'react';
 
+
+// this component contains all the ui and logic for tha application, where
+// we got aa simple form and a list of coordinates that can be sent in a request
 export default function Home() {
   const [points, setPoints] = useState([]);
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
-  const apiUrl = 'http://localhost:8000/geo/process';
+  // this should be using an env variable and not be hardcoded
+  const apiUrl = 'http://localhost:6000/geo/process';
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -35,10 +39,49 @@ export default function Home() {
     setError('');
   }, [lat, lng, setLat, setLng, setPoints, setError]);
 
-  const removePoint = (index) => {
+  const removePoint = (index: number) => {
     setPoints(points.filter((_, i) => i !== index));
   };
 
+
+  // this function realizes the POST request to the geo api
+  const sendToAPI = async () => {
+    if (points.length === 0) {
+      setError('Please add at least one coordinate point');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setResponse(null);
+
+    const raw = JSON.stringify({
+      "points": points
+    });
+
+    const requestOptions = {
+      method: "POST",
+      // mode: "no-cors",
+      headers: {
+        'Content-Type': 'application/json',  // This is crucial!
+      },
+      body: raw,
+      redirect: "follow"
+    };
+
+    fetch(apiUrl, requestOptions)
+      .then((response) => response.json())
+      .then((result) => {
+        setResponse(result)
+        console.log(result)
+      })
+      .catch((error) => {
+        console.error(error)
+        setError(error.message)
+      });
+
+    setLoading(false)
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
@@ -64,7 +107,7 @@ export default function Home() {
                   value={lat}
                   onChange={(e) => setLat(e.target.value)}
                   placeholder="-90 to 90"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium text-gray-500 placeholder-gray-300"
                 />
               </div>
               <div className="flex-1 min-w-[200px]">
@@ -77,7 +120,7 @@ export default function Home() {
                   value={lng}
                   onChange={(e) => setLng(e.target.value)}
                   placeholder="-180 to 180"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium text-gray-500 placeholder-gray-300"
                 />
               </div>
               <div className="flex items-end">
@@ -121,11 +164,29 @@ export default function Home() {
                 ))}
               </div>
             )}
-
           </div>
+          <button
+            onClick={sendToAPI}
+            disabled={loading || points.length === 0}
+            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Sending...' : 'Send to API'}
+          </button>
+
           {error && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
               {error}
+            </div>
+          )}
+
+          {response && (
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <h3 className="font-semibold text-green-800 mb-2">
+                Response:
+              </h3>
+              <pre className="text-sm text-green-700 overflow-x-auto">
+                {JSON.stringify(response, null, 2)}
+              </pre>
             </div>
           )}
         </div>
